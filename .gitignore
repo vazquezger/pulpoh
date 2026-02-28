@@ -1,6 +1,6 @@
 # Data cache — large files, not needed in version control
+data/
 framework/data/
-
 # Results — generated on each run
 hypotheses/*/results/
 

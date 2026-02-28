@@ -223,6 +223,7 @@ python walkforward.py h001
 - Los parámetros de la hipótesis van en `config.json`, no hardcodeados en `hypothesis.py`
 - Si hay dudas sobre qué exit model usar, recomendar `ComboExit` por defecto
 - Para acceder a datos de múltiples timeframes, agregar múltiples entradas en `config.json` bajo `"extra_intervals"`
+- **NUEVO:** Después de obtener el resultado de un test/script, **SIEMPRE pregunta al usuario** si quiere ver los resultados. Si dice que sí, **abrí automáticamente el archivo `trades_chart.html` en el navegador** utilizando los comandos del sistema operativo (ej: `open "ruta/al/trades_chart.html"` en macOS, o `start ""` en Windows).
 
 ---
 
