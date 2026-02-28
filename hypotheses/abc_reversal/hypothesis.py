@@ -112,14 +112,16 @@ class Hypothesis(BaseHypothesis):
         df["ema200"] = df["close"].ewm(span=200, adjust=False).mean()
         df["bull"]   = df["close"] > df["ema200"]
 
-        # Calcular ATR(14) para el AtrComboExit
+        # Filtro de rango: solo operar cuando la volatilidad está por encima de su media (expansión)
         tr1 = df["high"] - df["low"]
         tr2 = (df["high"] - df["close"].shift(1)).abs()
         tr3 = (df["low"] - df["close"].shift(1)).abs()
         tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
         df["atr"] = tr.rolling(window=14).mean()
+        df["atr_ma"] = df["atr"].rolling(window=50).mean()
+        df["expanding"] = df["atr"] > df["atr_ma"]
 
         abc_signals = self._find_abc_signals(df)
-        return abc_signals & df["bull"]
+        return abc_signals & df["bull"] & df["expanding"]
 
 

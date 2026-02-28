@@ -14,8 +14,8 @@ Para cada ventana definida:
   4. Muestra la degradación de métricas para detectar overfitting
 
 Uso:
-    python3 walkforward.py h003
-    python3 walkforward.py h003 --symbol BTCUSDT --sort sharpe
+    python3 walkforward.py abc_reversal
+    python3 walkforward.py abc_reversal --symbol BTCUSDT --sort sharpe
 """
 
 import sys
@@ -97,7 +97,7 @@ def dict_to_str(d):
 
 def main():
     parser = argparse.ArgumentParser(description="Walk-Forward Framework")
-    parser.add_argument("hypothesis", help="Hypothesis ID to run (e.g. h003)")
+    parser.add_argument("hypothesis", help="Hypothesis ID to run (e.g. abc_reversal)")
     parser.add_argument("--symbol", help="Símbolo a testear (si no, usa el 1ro de config.json)")
     parser.add_argument("--sort", default="sharpe", choices=["sharpe", "net_return"])
     args = parser.parse_args()

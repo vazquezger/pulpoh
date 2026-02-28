@@ -31,7 +31,7 @@ pulpoh/
 │               └── {interval}.csv   ← e.g. BTCUSDT/2024/1h.csv
 │
 └── hypotheses/                  ← Una carpeta por hipótesis
-    └── h001_nombre_descriptivo/
+    └── nombre_descriptivo/
         ├── hypothesis.py        ← ÚNICA clase a implementar (~30 líneas)
         ├── config.json          ← Configuración completa de la hipótesis
         └── results/             ← Auto-generado al correr (gitignoreado)
@@ -85,9 +85,9 @@ Reporter → results/ (report.md, trades.csv, charts)
 
 ### Paso 1 — Crear la carpeta
 ```
-hypotheses/h002_nombre_descriptivo/
+hypotheses/nombre_descriptivo/
 ```
-Seguir la convención `h{número}_nombre_en_snake_case`.
+Seguir la convención `nombre_en_snake_case`. NUNCA usar prefijos numerados como `h001_`.
 
 ### Paso 2 — Crear `config.json`
 ```json
@@ -132,7 +132,7 @@ class Hypothesis(BaseHypothesis):
 
 ### Paso 4 — Correr
 ```bash
-python run.py h002
+python run.py nombre_descriptivo
 ```
 
 ---
@@ -178,19 +178,19 @@ def generate_signals(self, df: pd.DataFrame) -> pd.Series:
 
 ```bash
 # Correr una hipótesis
-python run.py h001
+python run.py nombre_descriptivo
 
 # Correr y ver solo las señales sin simular trades
-python run.py h001 --signals-only
+python run.py nombre_descriptivo --signals-only
 
 # Listar todas las hipótesis disponibles
 python run.py --list
 
 # Forzar re-descarga de datos (ignora cache)
-python run.py h001 --refresh-data
+python run.py nombre_descriptivo --refresh-data
 
 # Correr validación walk-forward (requiere optimize.json en la carpeta de la hipótesis)
-python walkforward.py h001
+python walkforward.py nombre_descriptivo
 ```
 
 ---
@@ -220,6 +220,7 @@ python walkforward.py h001
 - **NUNCA modificar** archivos dentro de `framework/` salvo que el usuario lo pida explícitamente y entienda las implicaciones
 - **SIEMPRE** implementar `generate_signals()` sin usar datos futuros (no `shift(-1)`, no `lookahead`)
 - Cuando se pide agregar una hipótesis, seguir exactamente los 4 pasos de arriba
+- **NUNCA** numeres las estrategias con prefijos como `h001_`, `h002_`, etc. Usa solo el nombre descriptivo (ej: `abc_reversal`).
 - Los parámetros de la hipótesis van en `config.json`, no hardcodeados en `hypothesis.py`
 - Si hay dudas sobre qué exit model usar, recomendar `ComboExit` por defecto
 - Para acceder a datos de múltiples timeframes, agregar múltiples entradas en `config.json` bajo `"extra_intervals"`

@@ -21,7 +21,7 @@ pulpoh/
 │   └── data/         ← Los datos descargados de Binance (se guardan acá)
 │
 └── hypotheses/       ← Tus ideas van acá, una carpeta por hipótesis
-    └── h001_green_near_low_high/
+    └── green_near_low_high/
         ├── hypothesis.py   ← La lógica de la idea (~20 líneas)
         ├── config.json     ← Qué coins, qué años, cómo salir
         └── results/        ← Los resultados se generan acá
@@ -32,15 +32,15 @@ pulpoh/
 ## Para correr una hipótesis
 
 ```bash
-python run.py h001
+python run.py green_near_low_high
 ```
 
-Eso hace todo: baja los datos si no los tiene, detecta señales, simula los trades, y guarda los resultados en `hypotheses/h001_.../results/`.
+Eso hace todo: baja los datos si no los tiene, detecta señales, simula los trades, y guarda los resultados en `hypotheses/green_near_low_high/results/`.
 
 ```bash
 python run.py --list              # Ver todas las hipótesis disponibles
-python run.py h001 --signals-only # Solo muestra las señales, no simula trades
-python run.py h001 --refresh-data # Fuerza re-descarga de datos
+python run.py green_near_low_high --signals-only # Solo muestra las señales, no simula trades
+python run.py green_near_low_high --refresh-data # Fuerza re-descarga de datos
 ```
 
 ---
@@ -49,7 +49,7 @@ python run.py h001 --refresh-data # Fuerza re-descarga de datos
 
 Para evitar overfitting, el framework incluye un motor de *Walk-Forward Validation*. Optimiza parámetros en datos pasados y los prueba "a ciegas" en el futuro.
 
-1. Creá un archivo `optimize.json` en tu hipótesis (ej: `hypotheses/h003_abc_reversal/optimize.json`):
+1. Creá un archivo `optimize.json` en tu hipótesis (ej: `hypotheses/abc_reversal/optimize.json`):
 ```json
 {
     "walkforward_windows": [
@@ -65,7 +65,7 @@ Para evitar overfitting, el framework incluye un motor de *Walk-Forward Validati
 ```
 2. Corré el validador:
 ```bash
-python walkforward.py h003
+python walkforward.py abc_reversal
 ```
 Esto te dirá si tu estrategia realmente funciona o si solo memorizó el pasado.
 
@@ -91,7 +91,7 @@ results/
 
 ### 1. Crear la carpeta
 ```
-hypotheses/h002_mi_idea/
+hypotheses/mi_idea/
 ```
 
 ### 2. Crear `config.json` — qué testear y cómo salir
@@ -122,7 +122,7 @@ class Hypothesis(BaseHypothesis):
 
 ### 4. Correr
 ```bash
-python run.py h002
+python run.py mi_idea
 ```
 
 ---

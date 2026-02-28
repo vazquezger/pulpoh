@@ -2,9 +2,9 @@
 run.py — Entry point for pulpo-hypo framework
 
 Usage:
-    python run.py h001                      # Run hypothesis h001
-    python run.py h001 --signals-only       # Show signals, skip backtest
-    python run.py h001 --refresh-data       # Force re-download data
+    python run.py abc_reversal              # Run hypothesis abc_reversal
+    python run.py abc_reversal --signals-only       # Show signals, skip backtest
+    python run.py abc_reversal --refresh-data       # Force re-download data
     python run.py --list                    # List all available hypotheses
 """
 
@@ -19,16 +19,13 @@ HYPOTHESES_DIR = Path(__file__).parent / "hypotheses"
 
 
 def discover_hypotheses() -> dict[str, Path]:
-    """Find all hypothesis folders (named h###_*)."""
+    """Find all hypothesis folders."""
     hypos = {}
     if not HYPOTHESES_DIR.exists():
         return hypos
     for folder in sorted(HYPOTHESES_DIR.iterdir()):
-        if folder.is_dir() and folder.name.startswith("h") and (folder / "hypothesis.py").exists():
-            # Key: the short ID (e.g. "h001")
-            short_id = folder.name.split("_")[0]
-            hypos[short_id] = folder
-            # Also accept the full folder name
+        if folder.is_dir() and (folder / "hypothesis.py").exists():
+            # Key: the folder name
             hypos[folder.name] = folder
     return hypos
 
@@ -49,7 +46,7 @@ def list_hypotheses():
             cfg = json.loads(config_path.read_text(encoding="utf-8"))
             name = cfg.get("name", path.name)
             desc = cfg.get("description", "")
-        print(f"  {path.name.split('_')[0]:6s}  {name}")
+        print(f"  {path.name:20s}  {name}")
         if desc:
             print(f"        {desc}")
     print()
@@ -73,7 +70,7 @@ def main():
     parser.add_argument(
         "hypothesis",
         nargs="?",
-        help="Hypothesis ID to run (e.g. h001)"
+        help="Hypothesis ID to run (e.g. abc_reversal)"
     )
     parser.add_argument(
         "--list", "-l",

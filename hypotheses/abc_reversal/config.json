@@ -1,6 +1,6 @@
 {
     "name": "ABC Reversal",
-    "description": "Detecta correcciones ABC (Elliott) en SOLUSDT 4h. Entra al finalizar la onda C esperando el próximo impulso alcista.",
+    "description": "Detecta correcciones ABC (Elliott) en SOLUSDT 4h. Entra al finalizar la onda C esperando el próximo impulso alcista. Filtra consolidaciones vía ATR.",
     "symbols": [
         "SOLUSDT"
     ],
@@ -12,10 +12,10 @@
     ],
     "signal_interval": "4h",
     "execution_interval": "4h",
-    "exit_model": "AtrComboExit",
+    "exit_model": "ComboExit",
     "exit_params": {
-        "tp_atr_mult": 4.0,
-        "sl_atr_mult": 1.5,
+        "tp_pct": 6.0,
+        "sl_pct": 1.0,
         "max_hours": 96
     },
     "leverage": 1,
