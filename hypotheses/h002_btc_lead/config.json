@@ -1,0 +1,23 @@
+{
+  "name": "BTC Lead",
+  "description": "Cuando BTC EMA9 cruza al alza EMA21 en 4h, entrar en ETHUSDT al open de la siguiente vela.",
+  "symbols": [
+    "ETHUSDT"
+  ],
+  "years": [
+    2022,
+    2023,
+    2024
+  ],
+  "signal_interval": "4h",
+  "execution_interval": "4h",
+  "exit_model": "ComboExit",
+  "exit_params": {
+    "tp_pct": 4.0,
+    "sl_pct": 2.0,
+    "max_hours": 48
+  },
+  "leverage": 2,
+  "fees_pct": 0.02,
+  "slippage_pct": 0.05
+}

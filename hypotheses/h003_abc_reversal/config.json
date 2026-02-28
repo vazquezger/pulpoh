@@ -1,0 +1,24 @@
+{
+    "name": "ABC Reversal",
+    "description": "Detecta correcciones ABC (Elliott) en SOLUSDT 4h. Entra al finalizar la onda C esperando el próximo impulso alcista.",
+    "symbols": [
+        "SOLUSDT"
+    ],
+    "years": [
+        2022,
+        2023,
+        2024,
+        2025
+    ],
+    "signal_interval": "4h",
+    "execution_interval": "4h",
+    "exit_model": "AtrComboExit",
+    "exit_params": {
+        "tp_atr_mult": 4.0,
+        "sl_atr_mult": 1.5,
+        "max_hours": 96
+    },
+    "leverage": 1,
+    "fees_pct": 0.02,
+    "slippage_pct": 0.05
+}

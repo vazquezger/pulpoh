@@ -1,0 +1,17 @@
+# Data cache — large files, not needed in version control
+framework/data/
+
+# Results — generated on each run
+hypotheses/*/results/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# OS
+.DS_Store
