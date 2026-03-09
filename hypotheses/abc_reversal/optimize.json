@@ -24,27 +24,37 @@
     ],
     "param_grid": {
         "PIVOT_WINDOW": [
-            2,
             3,
             4
         ],
-        "exit_params.tp_pct": [
-            3.0,
+        "rsi_max": [
+            45,
+            50,
+            55
+        ],
+        "exit_params.tp_pct_long": [
             4.0,
-            5.0,
             6.0,
-            7.0
+            8.0
         ],
-        "exit_params.sl_pct": [
+        "exit_params.sl_pct_long": [
             0.5,
-            1.0,
-            1.5,
-            2.0
+            1.0
         ],
-        "exit_params.max_hours": [
-            48,
-            96,
-            144
+        "exit_params.tp_pct_short": [
+            2.0,
+            3.0,
+            4.0
+        ],
+        "exit_params.sl_pct_short": [
+            1.0,
+            1.5
+        ],
+        "exit_params.max_hours_long": [
+            72
+        ],
+        "exit_params.max_hours_short": [
+            48
         ]
     }
 }

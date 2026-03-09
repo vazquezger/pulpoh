@@ -1,0 +1,8 @@
+{
+    "live_engine": {
+        "active_strats": ["abc_reversal", "trend_following"],
+        "data_directory": "live_data",
+        "default_capital": 1000.0,
+        "poll_interval_seconds": 60
+    }
+}

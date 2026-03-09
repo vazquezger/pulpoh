@@ -1,0 +1,30 @@
+{
+    "name": "Trend Following (Surfista)",
+    "description": "Atrapa tendencias alcistas macroeconómicas comprando rupturas del máximo histórico reciente y manteniéndose montado mediante un Trailing Stop Loss.",
+    "trade_direction": "long",
+    "symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT"
+    ],
+    "years": [
+        2022,
+        2023,
+        2024,
+        2025
+    ],
+    "signal_interval": "1d",
+    "execution_interval": "1d",
+    "exit_model": "TrailingStop",
+    "exit_params": {
+        "trail_pct": 10.0
+    },
+    "macro_filter": {
+        "donchian_period": 30,
+        "volume_sma_period": 20,
+        "volume_multiplier": 1.2
+    },
+    "leverage": 1,
+    "fees_pct": 0.05,
+    "slippage_pct": 0.1
+}

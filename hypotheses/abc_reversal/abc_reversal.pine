@@ -1,0 +1,188 @@
+//@version=6
+strategy("ABC Reversal (Spot Portfolio)", overlay=true, initial_capital=1000, default_qty_type=strategy.percent_of_equity, default_qty_value=100, commission_type=strategy.commission.percent, commission_value=0.1)
+
+// =========================================================================
+// PARÁMETROS DE CONFIGURACIÓN
+// =========================================================================
+
+// Pivots y Estructura ABC
+int pivotWindow = input.int(2, "Velas de validación de Pivot", group="Estructura ABC")
+float cDepthMin = input.float(0.30, "Profundidad mínima Onda C (vs A/B) %", step=0.05, group="Estructura ABC")
+
+// Filtros Globales
+int emaLen = input.int(200, "EMA de Tendencia Macro", group="Filtros")
+int rsiMax = input.int(50, "RSI Máximo para Long", group="Filtros")
+bool useSrFilter = input.bool(true, "Usar filtro Soporte Histórico", group="Filtros")
+int srLookback = input.int(100, "Lookback del Soporte (Velas)", group="Filtros")
+float srTolPct = input.float(1.0, "Tolerancia del rebote al Soporte (%)", group="Filtros") / 100.0
+
+// Exit Constraints (Asimétrico 12 a 1)
+float tpPct = input.float(9.0, "Take Profit %", group="Gestión de Salida") / 100.0
+float slPct = input.float(2.0, "Stop Loss %", group="Gestión de Salida") / 100.0
+int maxHours = input.int(96, "Tiempo máximo en Trade (Barras 1h)", group="Gestión de Salida")
+
+
+// =========================================================================
+// CÁLCULO DE INDICADORES / FILTROS Y ESTADO DE MERCADO
+// =========================================================================
+
+// Tendencia Alcista (Sobre la EMA de 200 periodos)
+float ema200 = ta.ema(close, emaLen)
+bool bullMarket = close > ema200
+
+// Volatilidad (ATR 14 cruzando por encima de ATR MA 50)
+float _tr = ta.tr(true)
+float atr14 = ta.sma(_tr, 14) 
+float atrMa50 = ta.sma(atr14, 50)
+bool expanding = atr14 > atrMa50
+
+// RSI Matemático Suavizado (Imita alpha=1/14 de Pandas EWM)
+float delta = close - close[1]
+float gain = math.max(delta, 0)
+float loss = math.max(-delta, 0)
+float avgGain = ta.rma(gain, 14) 
+float avgLoss = ta.rma(loss, 14)
+float rs = avgLoss == 0 ? 999999 : avgGain / avgLoss
+float customRsi = 100 - (100 / (1 + rs))
+
+bool rsiLongOk = customRsi <= rsiMax or customRsi[1] <= rsiMax
+
+// =========================================================================
+// DETECCIÓN DE PIVOTS HISTÓRICOS Y ARREGLOS DE DATOS
+// =========================================================================
+
+// Detectar pivotes 2 velas hacia el pasado para confirmación actual
+float ph = ta.pivothigh(high, pivotWindow, pivotWindow)
+float pl = ta.pivotlow(low, pivotWindow, pivotWindow)
+
+// Almacenar el historial de pivotes en arrays limitados (mejora rendimiento)
+var float[] phVals = array.new_float(0)
+var int[] phBars = array.new_int(0)
+var float[] plVals = array.new_float(0)
+var int[] plBars = array.new_int(0)
+
+if not na(ph)
+    array.push(phVals, ph)
+    array.push(phBars, bar_index[pivotWindow]) 
+
+if not na(pl)
+    array.push(plVals, pl)
+    array.push(plBars, bar_index[pivotWindow])
+
+
+// =========================================================================
+// ESCANEO DEL PATRÓN ABC (A -> C) Y MARCO HISTÓRICO DE SOPORTES
+// =========================================================================
+
+bool isAbcSignal = false
+int pl1_idx = na
+
+// Si se detecta un Pivot Low confirmado EN ESTA BARRA (refiriéndose a N barras atrás)
+if not na(pl)
+    pl1_idx := bar_index - pivotWindow // El bar index real del piso actual
+    float pl1_val = pl
+    
+    // Buscar la última cresta intermedia (Punto B -> PH1)
+    float ph1_val = na
+    int ph1_idx = na
+    int phSize = array.size(phBars)
+    if phSize > 0
+        for i = phSize - 1 to 0
+            if array.get(phBars, i) < pl1_idx // Garantizar que la cresta ocurrió en el pasado
+                ph1_idx := array.get(phBars, i)
+                ph1_val := array.get(phVals, i)
+                break
+                
+    // Buscar el hundimiento donde terminó A (Punto A_Low -> PL0)
+    float pl0_val = na
+    int pl0_idx = na
+    int plSize = array.size(plBars)
+    if not na(ph1_idx) and plSize > 0
+        for i = plSize - 1 to 0
+            if array.get(plBars, i) < ph1_idx
+                pl0_idx := array.get(plBars, i)
+                pl0_val := array.get(plVals, i)
+                break
+                
+    // Buscar el tope orgánico donde empezó el inicio de la corrección A_High -> PH0
+    float ph0_val = na
+    int ph0_idx = na
+    if not na(pl0_idx) and phSize > 0
+        for i = phSize - 1 to 0
+            if array.get(phBars, i) < pl0_idx
+                ph0_idx := array.get(phBars, i)
+                ph0_val := array.get(phVals, i)
+                break
+                
+    // ---------------------------------------------------------------------
+    // REVISIÓN MATEMÁTICA DE CONDICIONES ELLIOTT
+    // ---------------------------------------------------------------------
+    if not na(ph0_idx)
+        float aSize = ph0_val - pl0_val
+        
+        // 1. A debe tener tamaño significativo y B no debe hacer nuevos techos (PH1 < PH0)
+        if aSize > 0 and ph1_val < ph0_val
+            float cDrop = ph1_val - pl1_val
+            
+            // 2. La Onda C debe perforar por al menos el margen cDepthMin de la Onda A
+            if cDrop >= aSize * cDepthMin
+                
+                // 3. Filtro de Piso/Soporte Estructural
+                bool nearSr = not useSrFilter
+                if useSrFilter
+                    for i = plSize - 1 to 0
+                        int hist_idx = array.get(plBars, i)
+                        // Limitar la ventana dae búsqueda (100) y excluir la propia Onda A
+                        if hist_idx >= pl1_idx - srLookback and hist_idx < pl1_idx and hist_idx != pl0_idx
+                            float hist_val = array.get(plVals, i)
+                            float diffPct = math.abs(pl1_val - hist_val) / hist_val
+                            if diffPct <= srTolPct
+                                nearSr := true // Rebotó dentro del 1% del soporte anterior.
+                                break
+                                
+                if nearSr
+                    isAbcSignal := true // ¡Patrón validado!
+
+
+// Variables de control para evitar re-gatillar el mismo ABC repetidamente
+var int lastTradedPlIdx = na
+
+// =========================================================================
+// SISTEMA DE ENTRADAS Y SALIDAS
+// =========================================================================
+
+// Combinar Filtro Semántico (ABC) con Filtro Técnico (Indicadores)
+bool longCond = isAbcSignal and bullMarket and expanding and rsiLongOk and (na(lastTradedPlIdx) or pl1_idx > lastTradedPlIdx) and bar_index == pl1_idx + pivotWindow
+
+// Trigger Entry en velas subsecuentes
+if longCond and strategy.position_size == 0
+    strategy.entry("Spot Long", strategy.long)
+    lastTradedPlIdx := pl1_idx
+
+// Gestor de posiciones asimétricas (Hard TP/SL + Time Limit)
+if strategy.position_size > 0
+    float entryPrice = strategy.opentrades.entry_price(strategy.opentrades - 1)
+    int barsInTrade = bar_index - strategy.opentrades.entry_bar_index(strategy.opentrades - 1)
+    
+    float tpPrice = entryPrice * (1 + tpPct)
+    float slPrice = entryPrice * (1 - slPct)
+    
+    // Si la corrección se estabiliza de lado durante demasiados días (ej: 4 días), cortar pérdidas.
+    if barsInTrade >= maxHours
+        strategy.close("Spot Long", comment="Time Exit")
+    else
+        strategy.exit("Take/Stop", "Spot Long", limit=tpPrice, stop=slPrice)
+
+// Resetear State Local
+isAbcSignal := false
+
+// =========================================================================
+// VISUALIZACIÓN DE DEBUG EN GRÁFICO
+// =========================================================================
+plotshape(longCond, title="Entry Signal", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.small)
+if array.size(phBars) > 300
+    array.shift(phBars)
+    array.shift(phVals)
+if array.size(plBars) > 300
+    array.shift(plBars)
+    array.shift(plVals)

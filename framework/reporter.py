@@ -267,7 +267,7 @@ def _plot_trades_html(trades: list[Trade], df: pd.DataFrame, output_path: Path):
       paper_bgcolor: "#0f172a",
       plot_bgcolor:  "#1e293b",
       font:  {{ color: "#94a3b8" }},
-      xaxis: {{ type: "category", tickangle: -45, showgrid: false,
+      xaxis: {{ type: "date", showgrid: false,
                 rangeslider: {{ visible: true, bgcolor: "#1e293b" }} }},
       yaxis: {{ showgrid: true, gridcolor: "#334155",
                 tickformat: "$,.0f" }},

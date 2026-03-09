@@ -102,20 +102,20 @@ def main():
     parser.add_argument("--sort", default="sharpe", choices=["sharpe", "net_return"])
     args = parser.parse_args()
 
-    # Discover and load hypothesis
+def run_walkforward(hypo_name, symbol_override=None, sort_by="sharpe"):
     hypos = discover_hypotheses()
-    key = args.hypothesis.lower()
+    key = hypo_name.lower()
     
     if key not in hypos:
-        print(f"❌ Hypothesis '{args.hypothesis}' not found.")
-        sys.exit(1)
+        print(f"❌ Hypothesis '{hypo_name}' not found.")
+        return None
         
     folder = hypos[key]
     optimize_json_path = folder / "optimize.json"
     
     if not optimize_json_path.exists():
         print(f"❌ '{folder.name}' does not have an optimize.json file.")
-        sys.exit(1)
+        return None
         
     with open(optimize_json_path, "r", encoding="utf-8") as f:
         opt_config = json.load(f)
@@ -125,16 +125,16 @@ def main():
     
     if not windows or not param_grid:
         print("❌ 'optimize.json' must contain 'walkforward_windows' and 'param_grid'.")
-        sys.exit(1)
+        return None
 
     print(f"\nLoading: {folder.name}")
     hypo = load_hypothesis(folder)
     
-    symbol = args.symbol if args.symbol else hypo.symbols[0]
+    symbol = symbol_override if symbol_override else hypo.symbols[0]
     
     print(f"\n{'='*65}")
     print(f"  Walk-Forward Validation — {folder.name} ({symbol})")
-    print(f"  Optimizando por: {args.sort}")
+    print(f"  Optimizando por: {sort_by}")
     print(f"{'='*65}\n")
 
     wf_results = []
@@ -147,7 +147,7 @@ def main():
         print(f"── Ventana {i}: Train={train_years} │ Validate={val_year} ──────────")
         print(f"   Corriendo grid search ({total_combos} combos)...", flush=True)
 
-        best_params, train_m = optimize(hypo, symbol, train_years, param_grid, sort_by=args.sort)
+        best_params, train_m = optimize(hypo, symbol, train_years, param_grid, sort_by=sort_by)
         if best_params is None:
             print(f"   ❌ Sin resultados para train={train_years}\n")
             continue
@@ -187,7 +187,7 @@ def main():
         })
 
     if not wf_results:
-        return
+        return None
 
     print(f"{'='*65}")
     print(f"  RESUMEN WALK-FORWARD — {symbol}")
@@ -202,8 +202,25 @@ def main():
 
     avg_val_sharpe = sum(r["val_sharpe"] for r in wf_results) / len(wf_results)
     avg_val_net    = sum(r["val_net"]    for r in wf_results) / len(wf_results)
-    print(f"\n  Promedio validación → Sharpe: {avg_val_sharpe:.2f}  Net: {avg_val_net:+.2f}%/año")
-    print()
+    print(f"\n  Promedio validación → Sharpe: {avg_val_sharpe:.2f}  Net: {avg_val_net:+.2f}%/año\n")
+    
+    return {
+        "avg_sharpe": avg_val_sharpe,
+        "avg_net": avg_val_net,
+        "results": wf_results
+    }
+
+def main():
+    parser = argparse.ArgumentParser(description="Walk-Forward Framework")
+    parser.add_argument("hypothesis", help="Hypothesis ID to run (e.g. abc_reversal)")
+    parser.add_argument("--symbol", help="Símbolo a testear (si no, usa el 1ro de config.json)")
+    parser.add_argument("--sort", default="sharpe", choices=["sharpe", "net_return"])
+    args = parser.parse_args()
+
+    # Descartamos el retorno por consola de main
+    res = run_walkforward(args.hypothesis, args.symbol, args.sort)
+    if res is None:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

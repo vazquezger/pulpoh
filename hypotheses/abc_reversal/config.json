@@ -1,24 +1,42 @@
 {
     "name": "ABC Reversal",
-    "description": "Detecta correcciones ABC (Elliott) en SOLUSDT 4h. Entra al finalizar la onda C esperando el próximo impulso alcista. Filtra consolidaciones vía ATR.",
+    "description": "Detecta correcciones ABC (Elliott) en SOLUSDT 1h. Entra al finalizar la onda C esperando el próximo impulso alcista. Filtra consolidaciones vía ATR y chequea Soporte/Resistencia.",
     "symbols": [
+        "BTCUSDT",
         "SOLUSDT"
     ],
     "years": [
         2022,
         2023,
         2024,
-        2025
+        2025,
+        2026
     ],
-    "signal_interval": "4h",
-    "execution_interval": "4h",
-    "exit_model": "ComboExit",
+    "signal_interval": "1h",
+    "execution_interval": "1h",
+    "exit_model": "AsymmetricComboExit",
     "exit_params": {
-        "tp_pct": 6.0,
-        "sl_pct": 1.0,
-        "max_hours": 96
+        "tp_pct_long": 9.0,
+        "sl_pct_long": 2.0,
+        "max_hours_long": 96,
+        "tp_pct_short": 6.0,
+        "sl_pct_short": 1.5,
+        "max_hours_short": 48
     },
+    "symbol_overrides": {
+        "BTCUSDT": {
+            "exit_params": {
+                "tp_pct_long": 8.0,
+                "sl_pct_long": 1.5
+            }
+        }
+    },
+    "rsi_max": 50,
+    "use_sr_filter": true,
+    "sr_lookback": 100,
+    "sr_tolerance_pct": 1.0,
+    "trade_direction": "long",
     "leverage": 1,
-    "fees_pct": 0.02,
-    "slippage_pct": 0.05
+    "fees_pct": 0.1,
+    "slippage_pct": 0.1
 }

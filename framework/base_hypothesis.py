@@ -58,6 +58,7 @@ class BaseHypothesis(ABC):
         self.fees_pct: float = self.config.get("fees_pct", 0.05)         # Futuros taker (spot=0.1%)
         self.slippage_pct: float = self.config.get("slippage_pct", 0.1)  # Futuros más líquidos que spot
         self.leverage: int = self.config.get("leverage", 1)               # 1 = sin apalancamiento
+        self.symbol_overrides: dict = self.config.get("symbol_overrides", {})
 
     def set_params(self, params: dict):
         """
@@ -132,11 +133,19 @@ class BaseHypothesis(ABC):
         print(f"  Mode:    {lev_str} | Fees: {self.fees_pct}%/side | Slippage: {self.slippage_pct}%")
         print(f"{'='*60}\n")
 
-        exit_model = build_exit_model(self.exit_model_name, self.exit_params)
         all_metrics = {}
         self._refresh_data = refresh_data
 
         for symbol in self.symbols:
+            
+            # Resolve symbol-specific overrides before building the exit model
+            sy_exit_params = self.exit_params.copy()
+            if symbol in self.symbol_overrides:
+                overrides = self.symbol_overrides[symbol].get("exit_params", {})
+                sy_exit_params.update(overrides)
+                
+            exit_model = build_exit_model(self.exit_model_name, sy_exit_params)
+            
             for year in self.years:
                 print(f"\n▶ {symbol} {year}")
 
@@ -152,7 +161,11 @@ class BaseHypothesis(ABC):
 
                 # 2. Generate signals
                 signals = self.generate_signals(df)
-                n_signals = signals.sum()
+                if signals.dtype == bool:
+                    n_signals = signals.sum()
+                else:
+                    n_signals = (signals != 0).sum()
+                    
                 print(f"  [Signals] Found {n_signals} entry signals "
                       f"({n_signals/len(df)*100:.1f}% of candles)")
 

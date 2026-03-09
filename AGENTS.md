@@ -34,6 +34,7 @@ pulpoh/
     └── nombre_descriptivo/
         ├── hypothesis.py        ← ÚNICA clase a implementar (~30 líneas)
         ├── config.json          ← Configuración completa de la hipótesis
+        ├── hypo.md              ← Documentación de la estrategia (OBLIGATORIO)
         └── results/             ← Auto-generado al correr (gitignoreado)
             ├── report.md
             ├── trades.csv
@@ -81,7 +82,7 @@ Reporter → results/ (report.md, trades.csv, charts)
 
 ---
 
-## Cómo agregar una nueva hipótesis (4 pasos)
+## Cómo agregar una nueva hipótesis (5 pasos)
 
 ### Paso 1 — Crear la carpeta
 ```
@@ -130,7 +131,10 @@ class Hypothesis(BaseHypothesis):
         return df['close'] > df['open']
 ```
 
-### Paso 4 — Correr
+### Paso 4 — Documentar con `hypo.md` (¡OBLIGATORIO!)
+Crear en la carpeta de la hipótesis un archivo `hypo.md` que explique la teoría general de la estrategia, el patrón a buscar, los filtros, los modelos de salida esperados y una descripción general de los parámetros del `config.json`. De esta manera, cuando otro LLM reanude el trabajo o asuma la optimización de otra estrategia, podrá leer `hypo.md` para entender de qué se trata la hipótesis rápidamente en lugar de tener que reverse-engineer todo el código fuente `hypothesis.py`.
+
+### Paso 5 — Correr
 ```bash
 python run.py nombre_descriptivo
 ```
@@ -191,6 +195,14 @@ python run.py nombre_descriptivo --refresh-data
 
 # Correr validación walk-forward (requiere optimize.json en la carpeta de la hipótesis)
 python walkforward.py nombre_descriptivo
+
+# NUEVO: Optimización Global Multi-Año (Busca mejores parámetros estáticos inter-año)
+# Modificar el grid dentro del script y ejecutar:
+python framework/scripts/optimize_global.py
+
+# NUEVO: Walk-Forward Continuo / Ventana Móvil (Re-optimización dinámica)
+# Evalúa el mes pasado (ej: 30 días) para operar la semana siguiente (ej: 7 días):
+python framework/scripts/optimize_rolling.py nombre_descriptivo --train-days 30 --test-days 7
 ```
 
 ---
@@ -217,14 +229,18 @@ python walkforward.py nombre_descriptivo
 
 ## Reglas para el LLM asistente
 
+- **ROL DEL ASISTENTE:** Asume la identidad de un **Quant Trader experto** y un **Ingeniero de Software Senior en Python**. Al proponer o revisar estrategias, prioriza la gestión de riesgo, la robustez estadística y evita el sobreajuste (overfitting). Al escribir código, prioriza la eficiencia (vectorización pura con pandas) y la estructura limpia.
 - **NUNCA modificar** archivos dentro de `framework/` salvo que el usuario lo pida explícitamente y entienda las implicaciones
 - **SIEMPRE** implementar `generate_signals()` sin usar datos futuros (no `shift(-1)`, no `lookahead`)
-- Cuando se pide agregar una hipótesis, seguir exactamente los 4 pasos de arriba
+- Cuando se pide agregar una hipótesis, seguir exactamente los 5 pasos de arriba. Asegurate SIEMPRE de crear el archivo `hypo.md` para documentar la lógica.
 - **NUNCA** numeres las estrategias con prefijos como `h001_`, `h002_`, etc. Usa solo el nombre descriptivo (ej: `abc_reversal`).
 - Los parámetros de la hipótesis van en `config.json`, no hardcodeados en `hypothesis.py`
 - Si hay dudas sobre qué exit model usar, recomendar `ComboExit` por defecto
 - Para acceder a datos de múltiples timeframes, agregar múltiples entradas en `config.json` bajo `"extra_intervals"`
 - **NUEVO:** Después de obtener el resultado de un test/script, **SIEMPRE pregunta al usuario** si quiere ver los resultados. Si dice que sí, **abrí automáticamente el archivo `trades_chart.html` en el navegador** utilizando los comandos del sistema operativo (ej: `open "ruta/al/trades_chart.html"` en macOS, o `start ""` en Windows).
+- **ESPÍRITU CRÍTICO:** No aceptes automáticamente toda propuesta o idea del usuario. Discutí las propuestas con espíritu crítico, analizando pros, contras y posibles edge cases, para llegar juntos a una conclusión más sensata y robusta.
+- **CONCLUSIONES Y REPORTES:** Cada vez que lleguemos a una conclusión o hito sobre una estrategia, generá un reporte Markdown en la carpeta `results/` de esa hipótesis. El reporte debe llamarse resumiendo el entendimiento pero el archivo debe ser nombrado estrictamente como `informe-YYYYMMDD.md` (ej. `informe-20260302.md`). Si hay múltiples reportes en un mismo día, sufijá con `-01`, `-02`, etc.
+- **PROMOCIÓN A CANDIDATE:** Para considerar y agregar nuevas estrategias a `CANDIDATES.md`, es obligatorio asegurar que fueron puestas a prueba sin Lookahead Bias por al menos 4 años, ya sea mediante Walk-Forward o testeo robusto.
 
 ---
 
